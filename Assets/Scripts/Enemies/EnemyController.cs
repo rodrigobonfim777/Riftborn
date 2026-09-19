@@ -17,6 +17,8 @@ public class EnemyController : MonoBehaviour
         body = GetComponent<Rigidbody2D>();
     }
 
+    public void SetMovementSpeed(float speed) => movementSpeed = Mathf.Max(0f, speed);
+
     public void SetTarget(Transform newTarget)
     {
         target = newTarget;

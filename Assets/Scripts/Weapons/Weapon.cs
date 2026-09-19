@@ -1,30 +1,36 @@
-using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 [DisallowMultipleComponent]
+[DefaultExecutionOrder(100)]
 public class Weapon : MonoBehaviour
 {
-    [SerializeField, Min(0.01f)] private float detectionRange = 6f;
-    [SerializeField] private LayerMask enemyLayer;
+    public event System.Action<Vector2> ShotFired;
     [SerializeField] private Projectile projectilePrefab;
     [SerializeField] private Transform firePoint;
-    [SerializeField, Min(1)] private int damage = 1;
+    [SerializeField, Min(1)] private int damage = 10;
     [Tooltip("Projectile speed in Unity units per second.")]
     [SerializeField, Min(0.01f)] private float projectileSpeed = 10f;
     [Tooltip("Maximum number of automatic shots per second.")]
     [SerializeField, Min(0.01f)] private float shotsPerSecond = 4f;
 
-    private const float TargetSearchInterval = 0.1f;
-
-    private readonly List<Collider2D> nearbyEnemies = new List<Collider2D>(32);
-    private ContactFilter2D enemyFilter;
-    private EnemyHealth currentTarget;
+    private PlayerExperience experience;
+    private PlayerHealth ownerHealth;
+    private Camera aimCamera;
     private float nextShotTime;
-    private float nextTargetSearchTime;
+
+    public int CurrentDamage => (int)System.Math.Min((long)damage + (experience != null ? experience.DamageBonus : 0), int.MaxValue);
+    public Vector3 AimOrigin => firePoint != null ? firePoint.position : transform.position;
+    public Vector3 AimPosition { get; private set; }
+    public Vector2 AimDirection { get; private set; }
+    public bool HasAim { get; private set; }
 
     private void Awake()
     {
-        detectionRange = Mathf.Max(0.01f, detectionRange);
+        if (GetComponent<WeaponAimIndicator>() == null)
+            gameObject.AddComponent<WeaponAimIndicator>();
+        experience = GetComponentInParent<PlayerExperience>();
+        ownerHealth = GetComponentInParent<PlayerHealth>();
         damage = Mathf.Max(1, damage);
         projectileSpeed = Mathf.Max(0.01f, projectileSpeed);
         shotsPerSecond = Mathf.Max(0.01f, shotsPerSecond);
@@ -36,105 +42,53 @@ public class Weapon : MonoBehaviour
         }
     }
 
-    private void Update()
+    // Resolve the cursor after CameraFollow has moved the camera for this frame.
+    private void LateUpdate()
     {
-        if (Time.timeScale == 0f)
-        {
+        HasAim = false;
+        if (Time.timeScale == 0f || (ownerHealth != null && ownerHealth.CurrentHealth <= 0))
             return;
-        }
 
-        if (!IsValidTarget(currentTarget))
-        {
-            currentTarget = null;
-        }
-
-        bool canAttemptShot = Time.time >= nextShotTime
-            && Time.time >= nextTargetSearchTime;
-
-        if (canAttemptShot)
-        {
-            currentTarget = FindNearestEnemy();
-            if (currentTarget == null)
-            {
-                nextTargetSearchTime = Time.time + TargetSearchInterval;
-            }
-        }
-
-        if (currentTarget == null)
-        {
+        Mouse mouse = Mouse.current;
+        if (aimCamera == null || !aimCamera.isActiveAndEnabled)
+            aimCamera = Camera.main;
+        if (mouse == null || aimCamera == null)
             return;
-        }
 
-        Vector2 aimDirection = currentTarget.transform.position - transform.position;
-        if (aimDirection.sqrMagnitude > 0f)
+        Ray ray = aimCamera.ScreenPointToRay(mouse.position.ReadValue());
+        Plane aimPlane = new Plane(Vector3.forward, transform.position);
+        if (!aimPlane.Raycast(ray, out float distance))
+            return;
+
+        AimPosition = ray.GetPoint(distance);
+        Vector2 aimDirection = AimPosition - transform.position;
+        if (aimDirection.sqrMagnitude > 0.000001f)
         {
             float angle = Mathf.Atan2(aimDirection.y, aimDirection.x) * Mathf.Rad2Deg;
             transform.rotation = Quaternion.Euler(0f, 0f, angle);
         }
 
-        if (canAttemptShot)
+        // Use the muzzle position after rotation for both the guide and the shot.
+        Vector2 shotDirection = AimPosition - AimOrigin;
+        if (shotDirection.sqrMagnitude <= 0.000001f)
+            return;
+
+        AimDirection = shotDirection.normalized;
+        HasAim = true;
+        if (Time.time >= nextShotTime)
         {
-            if (Shoot())
-            {
-                nextShotTime = Time.time + 1f / shotsPerSecond;
-            }
-            else
-            {
-                // A target exactly at the muzzle has no valid shot direction.
-                nextTargetSearchTime = Time.time + TargetSearchInterval;
-            }
+            Shoot();
+            nextShotTime = Time.time + 1f / shotsPerSecond;
         }
     }
 
-    private bool IsValidTarget(EnemyHealth enemy)
+    private void Shoot()
     {
-        return enemy != null && enemy.gameObject.activeInHierarchy && !enemy.IsDead
-            && (enemyLayer.value & (1 << enemy.gameObject.layer)) != 0
-            && ((Vector2)(enemy.transform.position - transform.position)).sqrMagnitude
-                <= detectionRange * detectionRange;
+        float angle = Mathf.Atan2(AimDirection.y, AimDirection.x) * Mathf.Rad2Deg;
+        Projectile projectile = Instantiate(projectilePrefab, AimOrigin, Quaternion.Euler(0f, 0f, angle));
+        projectile.Initialize(AimDirection, projectileSpeed, CurrentDamage);
+        ShotFired?.Invoke(AimDirection);
     }
 
-    private EnemyHealth FindNearestEnemy()
-    {
-        enemyFilter.SetLayerMask(enemyLayer);
-        enemyFilter.useTriggers = true;
-        nearbyEnemies.Clear();
-        Physics2D.OverlapCircle(transform.position, detectionRange, enemyFilter, nearbyEnemies);
-
-        EnemyHealth nearestEnemy = null;
-        float nearestDistanceSquared = float.PositiveInfinity;
-
-        for (int i = 0; i < nearbyEnemies.Count; i++)
-        {
-            Collider2D candidate = nearbyEnemies[i];
-            if (candidate == null || !candidate.TryGetComponent(out EnemyHealth enemy)
-                || !IsValidTarget(enemy))
-            {
-                continue;
-            }
-
-            float distanceSquared = ((Vector2)(enemy.transform.position - transform.position)).sqrMagnitude;
-            if (distanceSquared < nearestDistanceSquared)
-            {
-                nearestDistanceSquared = distanceSquared;
-                nearestEnemy = enemy;
-            }
-        }
-
-        return nearestEnemy;
-    }
-
-    private bool Shoot()
-    {
-        Vector2 direction = currentTarget.transform.position - firePoint.position;
-        if (direction.sqrMagnitude == 0f)
-        {
-            return false;
-        }
-
-        direction.Normalize();
-        Projectile projectile = Instantiate(projectilePrefab, firePoint.position, transform.rotation);
-        projectile.Initialize(direction, projectileSpeed, damage);
-        return true;
-    }
+    private void OnDisable() => HasAim = false;
 }

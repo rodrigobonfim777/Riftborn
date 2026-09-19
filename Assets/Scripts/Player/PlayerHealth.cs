@@ -28,6 +28,13 @@ public class PlayerHealth : MonoBehaviour
         HealthChanged?.Invoke();
 
         if (died)
+        {
+            GetComponent<PlayerController>().enabled = false;
+            foreach (Weapon weapon in GetComponentsInChildren<Weapon>()) weapon.enabled = false;
+            foreach (Collider2D collider in GetComponents<Collider2D>()) collider.enabled = false;
+            PlayerSpriteAnimation animation = GetComponent<PlayerSpriteAnimation>();
+            if (animation != null) animation.PlayDeath();
             Died?.Invoke();
+        }
     }
 }

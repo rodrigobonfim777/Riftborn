@@ -8,6 +8,8 @@ public class EnemyKillReporter : MonoBehaviour
 
     private EnemyHealth enemyHealth;
     private bool reported;
+    private bool isBoss;
+    public void MarkAsBoss() => isBoss = true;
 
     private void Awake()
     {
@@ -50,6 +52,6 @@ public class EnemyKillReporter : MonoBehaviour
             return;
         }
 
-        matchStats.RegisterKill();
+        matchStats.RegisterKill(isBoss);
     }
 }

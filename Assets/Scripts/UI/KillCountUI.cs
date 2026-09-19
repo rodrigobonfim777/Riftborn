@@ -28,7 +28,10 @@ public class KillCountUI : MonoBehaviour
 
     private void RefreshUI()
     {
-        string label = matchStats.KillCount == 1 ? "DERROTADO" : "DERROTADOS";
-        killCountText.text = $"{matchStats.KillCount} {label}";
+        killCountText.text = matchStats.DeathMessageVisible ? "VOCÊ MORREU"
+            : matchStats.Victory ? "FASE 1 CONCLUÍDA"
+            : matchStats.BossSpawned ? "DERROTE O BOSS"
+            : matchStats.GhostKills >= MatchStats.GhostTarget ? $"{MatchStats.GhostTarget}/{MatchStats.GhostTarget} FANTASMAS\nBOSS CHEGANDO!"
+            : $"Fantasmas: {matchStats.GhostKills}/{MatchStats.GhostTarget}\nFaltam {MatchStats.GhostTarget - matchStats.GhostKills} para o boss";
     }
 }

@@ -4,8 +4,13 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public class PlayerExperience : MonoBehaviour
 {
-    [SerializeField, Min(1)] private int baseExperience = 10;
-    [SerializeField, Min(0)] private int experienceIncreasePerLevel = 5;
+    [SerializeField, Min(1)] private int baseExperience = 100;
+    [SerializeField, Min(0)] private int experienceIncreasePerLevel = 0;
+
+    public long TotalExperience { get; private set; }
+    // Normal ghosts award 5 XP: 100 XP means 20 defeats per level.
+    // Damage changes only on level-up, by 5 points each time.
+    public int DamageBonus => (int)System.Math.Min(((long)CurrentLevel - 1) * 5, int.MaxValue - 10);
 
     public int CurrentLevel { get; private set; } = 1;
     public long CurrentExperience { get; private set; } = 0;
@@ -26,6 +31,8 @@ public class PlayerExperience : MonoBehaviour
         {
             return;
         }
+
+        TotalExperience = System.Math.Min(TotalExperience, long.MaxValue - amount) + amount;
 
         // Keep a 64-bit balance so adding int amounts does not discard XP at int.MaxValue.
         CurrentExperience = System.Math.Min(CurrentExperience, long.MaxValue - amount) + amount;

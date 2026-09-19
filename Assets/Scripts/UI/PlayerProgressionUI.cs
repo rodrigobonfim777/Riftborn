@@ -33,7 +33,7 @@ public class PlayerProgressionUI : MonoBehaviour
 
     private void RefreshUI()
     {
-        levelText.text = $"Nível {playerExperience.CurrentLevel}";
+        levelText.text = $"Nível {playerExperience.CurrentLevel} | Dano {10 + playerExperience.DamageBonus}";
 
         float progress = playerExperience.NextLevelExperience > 0
             ? (float)playerExperience.CurrentExperience / playerExperience.NextLevelExperience

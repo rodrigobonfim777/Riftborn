@@ -19,6 +19,12 @@ public class EnemyHealth : MonoBehaviour
         CurrentHealth = maximumHealth;
     }
 
+    public void ConfigureHealth(int health)
+    {
+        maximumHealth = Mathf.Max(1, health);
+        CurrentHealth = maximumHealth;
+    }
+
     public void TakeDamage(int damage)
     {
         int previousHealth = CurrentHealth;

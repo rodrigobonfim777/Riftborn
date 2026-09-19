@@ -8,6 +8,8 @@ public class EnemyContactDamage : MonoBehaviour
 
     private float nextDamageTime;
 
+    public void SetDamage(int amount) => damage = Mathf.Max(1, amount);
+
     private void Awake()
     {
         damage = Mathf.Max(1, damage);

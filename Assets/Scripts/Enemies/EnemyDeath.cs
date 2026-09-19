@@ -24,6 +24,13 @@ public class EnemyDeath : MonoBehaviour
 
     private void HandleDeath()
     {
+        // Phase enemies award XP directly through MatchStats, once per kill.
+        if (GetComponent<EnemyKillReporter>() != null)
+        {
+            gameObject.SetActive(false);
+            Destroy(gameObject);
+            return;
+        }
         if (experiencePickupPrefab != null)
         {
             Instantiate(experiencePickupPrefab, transform.position, Quaternion.identity);

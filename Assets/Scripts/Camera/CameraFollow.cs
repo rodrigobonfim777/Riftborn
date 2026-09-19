@@ -35,6 +35,10 @@ public class CameraFollow : MonoBehaviour
             ref followVelocity,
             smoothTime);
 
+        Camera view = GetComponent<Camera>();
+        if (HouseFloor.Active != null && view != null && view.orthographic)
+            smoothedPosition = HouseFloor.Active.Clamp(smoothedPosition,
+                new Vector2(view.orthographicSize * view.aspect, view.orthographicSize));
         transform.position = new Vector3(smoothedPosition.x, smoothedPosition.y, originalZ);
     }
 }

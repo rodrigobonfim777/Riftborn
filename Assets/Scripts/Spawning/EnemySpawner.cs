@@ -7,7 +7,7 @@ public class EnemySpawner : MonoBehaviour
     [SerializeField] private MatchStats matchStats;
     [SerializeField, Min(0.01f)] private float minimumSpawnDistance = 5f;
     [SerializeField, Min(0.01f)] private float maximumSpawnDistance = 8f;
-    [SerializeField, Min(0.01f)] private float spawnInterval = 2f;
+    [SerializeField, Min(0.01f)] private float spawnInterval = 1f;
 
     private float elapsedTime;
 
@@ -53,6 +53,8 @@ public class EnemySpawner : MonoBehaviour
             return;
         }
 
+        if (matchStats.Finished) return;
+
         elapsedTime += Time.deltaTime;
         if (elapsedTime < spawnInterval)
         {
@@ -65,15 +67,40 @@ public class EnemySpawner : MonoBehaviour
 
     private void SpawnEnemy()
     {
-        float angle = Random.Range(0f, Mathf.PI * 2f);
-        float distance = Random.Range(minimumSpawnDistance, maximumSpawnDistance);
-        Vector3 offset = new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0f) * distance;
-        Vector3 spawnPosition = player.position + offset;
+        bool boss = matchStats.GhostKills >= MatchStats.GhostTarget;
+        if (boss && matchStats.BossSpawned) return;
+        Vector3 spawnPosition = player.position;
+        bool found = false;
+        for (int attempt = 0; attempt < 32; attempt++)
+        {
+            float angle = Random.Range(0f, Mathf.PI * 2f);
+            float distance = Random.Range(minimumSpawnDistance, maximumSpawnDistance);
+            spawnPosition = player.position + new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0f) * distance;
+            if (HouseFloor.Active == null || HouseFloor.Active.Contains(spawnPosition, boss ? 2f : 1f))
+            {
+                found = true;
+                break;
+            }
+        }
+        if (!found) return;
 
+        if (boss ? !matchStats.TryReserveBoss() : !matchStats.TryReserveGhost()) return;
         GameObject enemy = Instantiate(enemyPrefab, spawnPosition, Quaternion.identity);
         EnemyController enemyController = enemy.GetComponent<EnemyController>();
         enemyController.SetTarget(player);
         EnemyKillReporter killReporter = enemy.GetComponent<EnemyKillReporter>();
         killReporter.SetMatchStats(matchStats);
+        if (boss)
+        {
+            enemy.name = "Rei Fantasma";
+            enemy.transform.localScale *= 2f;
+            enemy.GetComponent<SpriteRenderer>().color = new Color(0.8f, 0.55f, 1f);
+            EnemyHealth health = enemy.GetComponent<EnemyHealth>();
+            health.ConfigureHealth(1200);
+            enemyController.SetMovementSpeed(2.2f);
+            enemy.GetComponent<EnemyContactDamage>().SetDamage(15);
+            killReporter.MarkAsBoss();
+            matchStats.SetBoss(health);
+        }
     }
 }
