@@ -104,6 +104,9 @@ TextureImporter:
   - first:
       213: 21330004
     second: Player_Death_4
+  - first:
+      213: 21340000
+    second: Player_Projectile
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -946,6 +949,28 @@ TextureImporter:
       indices:
       edges: []
       weights: []
+    - serializedVersion: 2
+      name: Player_Projectile
+      rect:
+        serializedVersion: 2
+        x: 174
+        y: 288
+        width: 64
+        height: 76
+      alignment: 9
+      pivot: {x: 0.46875, y: 0.4736842}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 08197018c41843b3837c4ca871918492
+      internalID: 21340000
+      vertices: []
+      indices:
+      edges: []
+      weights: []
     outline: []
     customData: 
     physicsShape: []
@@ -994,6 +1019,7 @@ TextureImporter:
       Player_Death_2: 21330002
       Player_Death_3: 21330003
       Player_Death_4: 21330004
+      Player_Projectile: 21340000
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
