@@ -1040,7 +1040,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerSpriteAnimation
   framesPerSecond: 8
-  shotDuration: 0.18
+  shotDuration: 0.24
   walkDown:
   - {fileID: 21310000, guid: b60be089ad062dd4ab89fe015ada5bd6, type: 3}
   - {fileID: 21310001, guid: b60be089ad062dd4ab89fe015ada5bd6, type: 3}
@@ -1074,9 +1074,9 @@ MonoBehaviour:
   - {fileID: 21320007, guid: b60be089ad062dd4ab89fe015ada5bd6, type: 3}
   - {fileID: 21320008, guid: b60be089ad062dd4ab89fe015ada5bd6, type: 3}
   shootRight:
+  - {fileID: 21320006, guid: b60be089ad062dd4ab89fe015ada5bd6, type: 3}
   - {fileID: 21320009, guid: b60be089ad062dd4ab89fe015ada5bd6, type: 3}
-  - {fileID: 21320010, guid: b60be089ad062dd4ab89fe015ada5bd6, type: 3}
-  - {fileID: 21320011, guid: b60be089ad062dd4ab89fe015ada5bd6, type: 3}
+  - {fileID: 21310012, guid: b60be089ad062dd4ab89fe015ada5bd6, type: 3}
 --- !u!1 &822896132
 GameObject:
   m_ObjectHideFlags: 0

@@ -7,11 +7,12 @@ using UnityEngine.InputSystem;
 public class PlayerController : MonoBehaviour
 {
     [Tooltip("Movement speed in Unity units per second.")]
-    [SerializeField, Min(0f)] private float movementSpeed = 5f;
+    [SerializeField, Min(0f)] private float movementSpeed = 3f;
 
     private Rigidbody2D body;
     private Vector2 movementDirection;
     private Collider2D bodyCollider;
+    private PhysicsMaterial2D movementMaterial;
 
     public Vector2 MovementDirection => movementDirection;
 
@@ -19,6 +20,16 @@ public class PlayerController : MonoBehaviour
     {
         body = GetComponent<Rigidbody2D>();
         bodyCollider = GetComponent<Collider2D>();
+        body.interpolation = RigidbodyInterpolation2D.Interpolate;
+        body.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+        movementMaterial = new PhysicsMaterial2D("Player movement") { friction = 0f, bounciness = 0f };
+        body.sharedMaterial = movementMaterial;
+        // A top-down character collides at the feet, not across the entire sprite.
+        if (bodyCollider is BoxCollider2D feet)
+        {
+            feet.size = new Vector2(0.5f, 0.32f);
+            feet.offset = new Vector2(0f, -0.52f);
+        }
     }
 
     private void Update()
@@ -26,7 +37,7 @@ public class PlayerController : MonoBehaviour
         Keyboard keyboard = Keyboard.current;
         movementDirection = Vector2.zero;
 
-        if (keyboard == null)
+        if (keyboard == null || Time.timeScale == 0f || !Application.isFocused)
         {
             return;
         }
@@ -58,6 +69,20 @@ public class PlayerController : MonoBehaviour
             velocity = (next - clamped) / Time.fixedDeltaTime;
         }
         body.linearVelocity = velocity;
+    }
+
+    private void OnApplicationFocus(bool hasFocus)
+    {
+        if (!hasFocus)
+        {
+            movementDirection = Vector2.zero;
+            if (body != null) body.linearVelocity = Vector2.zero;
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (movementMaterial != null) Destroy(movementMaterial);
     }
 
     private void OnDisable()

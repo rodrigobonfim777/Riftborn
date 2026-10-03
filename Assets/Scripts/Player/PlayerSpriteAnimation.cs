@@ -1,11 +1,12 @@
 using UnityEngine;
 
 [DisallowMultipleComponent]
+[DefaultExecutionOrder(150)]
 [RequireComponent(typeof(PlayerController), typeof(SpriteRenderer))]
 public class PlayerSpriteAnimation : MonoBehaviour
 {
     [SerializeField, Min(1f)] private float framesPerSecond = 8f;
-    [SerializeField, Min(0.01f)] private float shotDuration = 0.18f;
+    [SerializeField, Min(0.01f)] private float shotDuration = 0.24f;
     [SerializeField] private Sprite[] walkDown;
     [SerializeField] private Sprite[] walkUp;
     [SerializeField] private Sprite[] walkLeft;
@@ -14,11 +15,49 @@ public class PlayerSpriteAnimation : MonoBehaviour
     [SerializeField] private Sprite[] shootUp;
     [SerializeField] private Sprite[] shootLeft;
     [SerializeField] private Sprite[] shootRight;
-
     [SerializeField] private Sprite[] deathFrames;
     [SerializeField] private Sprite deadSprite;
-    private bool dying;
+
+    private enum Facing { Down, Up, Left, Right }
+    private PlayerController controller;
+    private Rigidbody2D body;
+    private SpriteRenderer spriteRenderer;
+    private Weapon weapon;
+    private Facing facing;
+    private Facing shotFacing;
+    private float walkElapsed;
+    private float shotElapsed;
+    private float currentShotDuration;
     private float deathElapsed;
+    private bool dying;
+    private bool shooting;
+    private bool wasMoving;
+
+    public float AttackDuration => Mathf.Min(Mathf.Max(0.01f, shotDuration),
+        weapon != null ? weapon.ShotInterval * 0.85f : shotDuration);
+    public float StandingHeight => walkDown != null && walkDown.Length > 0 && walkDown[0] != null
+        ? walkDown[0].bounds.size.y * Mathf.Abs(transform.lossyScale.y) : 1.48f;
+
+    private void Awake()
+    {
+        controller = GetComponent<PlayerController>();
+        body = GetComponent<Rigidbody2D>();
+        spriteRenderer = GetComponent<SpriteRenderer>();
+        weapon = GetComponentInChildren<Weapon>();
+    }
+
+    private void OnEnable()
+    {
+        if (weapon != null) weapon.ShotStarted += OnShotStarted;
+    }
+
+    private void OnDisable()
+    {
+        if (weapon != null) weapon.ShotStarted -= OnShotStarted;
+        shooting = false;
+        wasMoving = false;
+        walkElapsed = 0f;
+    }
 
     public void PlayDeath()
     {
@@ -28,47 +67,22 @@ public class PlayerSpriteAnimation : MonoBehaviour
         spriteRenderer.flipX = false;
     }
 
-    private enum Facing { Down, Up, Left, Right }
-    private PlayerController controller;
-    private SpriteRenderer spriteRenderer;
-    private Weapon weapon;
-    private Facing facing;
-    private Facing shotFacing;
-    private float walkElapsed;
-    private float shotElapsed;
-    private bool shooting;
-    private bool wasMoving;
-    private readonly System.Collections.Generic.List<Sprite> normalizedSideFrames = new System.Collections.Generic.List<Sprite>();
-
-    private void Awake()
+    // The scroll is on the character's right in the front/back artwork.
+    // Side casts use the same right-facing frames, mirrored for the left.
+    public Vector3 CastOrigin(Vector2 direction)
     {
-        controller = GetComponent<PlayerController>();
-        spriteRenderer = GetComponent<SpriteRenderer>();
-        weapon = GetComponentInChildren<Weapon>();
-        // Side poses come from a taller row; retain the same on-screen body height.
-        walkLeft = NormalizeSideFrames(walkLeft);
-        walkRight = NormalizeSideFrames(walkRight);
+        Facing castFacing = DirectionToFacing(direction);
+        float side = castFacing == Facing.Left ? -1f : 1f;
+        Vector3 offset = new Vector3(side * 0.38f, 0.08f) * (StandingHeight / 1.48f);
+        return transform.position + offset;
     }
 
-    private void OnEnable()
+    private void OnShotStarted(Vector2 direction)
     {
-        if (weapon != null)
-            weapon.ShotFired += OnShotFired;
-    }
-
-    private void OnDisable()
-    {
-        if (weapon != null)
-            weapon.ShotFired -= OnShotFired;
-        shooting = false;
-        wasMoving = false;
-        walkElapsed = 0f;
-    }
-
-    private void OnShotFired(Vector2 direction)
-    {
+        if (dying) return;
         shotFacing = DirectionToFacing(direction);
         shotElapsed = 0f;
+        currentShotDuration = AttackDuration;
         shooting = true;
     }
 
@@ -87,62 +101,36 @@ public class PlayerSpriteAnimation : MonoBehaviour
                     Mathf.FloorToInt(deathElapsed / 0.8f * deathFrames.Length)));
             return;
         }
-        Vector2 direction = controller.MovementDirection;
-        bool moving = controller.isActiveAndEnabled && direction.sqrMagnitude > 0.001f;
-        Facing nextFacing = moving ? DirectionToFacing(direction) : facing;
-        if (!moving || !wasMoving || nextFacing != facing)
-            walkElapsed = 0f;
-        else
-            walkElapsed += Time.deltaTime;
+        if (Time.timeScale == 0f) return;
 
+        Vector2 direction = body != null ? body.linearVelocity : controller.MovementDirection;
+        bool moving = controller.isActiveAndEnabled && controller.MovementDirection.sqrMagnitude > 0.001f
+            && direction.sqrMagnitude > 0.0025f;
+        Facing nextFacing = moving ? DirectionToFacing(direction) : facing;
+        if (!moving || !wasMoving || nextFacing != facing) walkElapsed = 0f;
+        else walkElapsed += Time.deltaTime;
         facing = nextFacing;
         wasMoving = moving;
 
+        if (shooting && (weapon == null || !weapon.isActiveAndEnabled || !weapon.HasEnemyInRange))
+            shooting = false;
         if (shooting)
         {
             Sprite[] shots = Frames(shotFacing, true);
-            float duration = Mathf.Max(0.01f, shotDuration);
-            if (shotElapsed < duration && shots != null && shots.Length > 0)
+            if (shotElapsed < currentShotDuration && shots != null && shots.Length > 0)
             {
-                int shotFrame = Mathf.Min(shots.Length - 1,
-                    Mathf.FloorToInt(shotElapsed / duration * shots.Length));
-                ShowFrame(shots, shotFrame);
+                ShowFrame(shots, Mathf.Min(shots.Length - 1,
+                    Mathf.FloorToInt(shotElapsed / currentShotDuration * shots.Length)),
+                    shotFacing == Facing.Left);
                 shotElapsed += Time.deltaTime;
-                // Remember the aim direction when firing while standing still.
                 if (!moving) facing = shotFacing;
                 return;
             }
             shooting = false;
         }
 
-        Sprite[] walk = Frames(facing, false);
-        ShowFrame(walk, moving ? Mathf.FloorToInt(walkElapsed * Mathf.Max(1f, framesPerSecond)) : 0);
-        // Both side cycles use the left-facing stride row.
-        spriteRenderer.flipX = facing == Facing.Right;
-    }
-
-
-    private Sprite[] NormalizeSideFrames(Sprite[] source)
-    {
-        if (source == null) return null;
-        Sprite[] result = (Sprite[])source.Clone();
-        for (int i = 0; i < result.Length; i++)
-        {
-            Sprite frame = result[i];
-            if (frame == null || Mathf.Abs(frame.rect.height - 174f) > 0.1f) continue;
-            Sprite normalized = Sprite.Create(frame.texture, frame.rect,
-                new Vector2(frame.pivot.x / frame.rect.width, frame.pivot.y / frame.rect.height),
-                frame.pixelsPerUnit * 174f / 148f);
-            normalized.name = frame.name;
-            result[i] = normalized;
-            normalizedSideFrames.Add(normalized);
-        }
-        return result;
-    }
-
-    private void OnDestroy()
-    {
-        foreach (Sprite frame in normalizedSideFrames) Destroy(frame);
+        ShowFrame(Frames(facing, false),
+            moving ? Mathf.FloorToInt(walkElapsed * Mathf.Max(1f, framesPerSecond)) : 0, facing == Facing.Left);
     }
 
     private static Facing DirectionToFacing(Vector2 direction)
@@ -157,18 +145,18 @@ public class PlayerSpriteAnimation : MonoBehaviour
         switch (direction)
         {
             case Facing.Up: return attack ? shootUp : walkUp;
-            case Facing.Left: return attack ? shootLeft : walkLeft;
+            case Facing.Left: return attack ? shootRight : walkRight;
             case Facing.Right: return attack ? shootRight : walkRight;
             default: return attack ? shootDown : walkDown;
         }
     }
 
-    private void ShowFrame(Sprite[] frames, int frame)
+    private void ShowFrame(Sprite[] frames, int frame, bool flip = false)
     {
         if (frames == null || frames.Length == 0) return;
         Sprite sprite = frames[frame % frames.Length];
         if (sprite == null) return;
-        spriteRenderer.flipX = false;
+        spriteRenderer.flipX = flip;
         spriteRenderer.sprite = sprite;
     }
 }

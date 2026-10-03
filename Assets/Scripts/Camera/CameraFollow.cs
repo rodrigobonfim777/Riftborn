@@ -22,6 +22,17 @@ public class CameraFollow : MonoBehaviour
         }
     }
 
+    public void SnapToPlayer()
+    {
+        if (player == null) return;
+        Vector2 position = player.position;
+        Camera view = GetComponent<Camera>();
+        if (HouseFloor.Active != null && view != null && view.orthographic)
+            position = HouseFloor.Active.Clamp(position,
+                new Vector2(view.orthographicSize * view.aspect, view.orthographicSize));
+        transform.position = new Vector3(position.x, position.y, originalZ);
+        followVelocity = Vector2.zero;
+    }
     private void LateUpdate()
     {
         if (player == null)

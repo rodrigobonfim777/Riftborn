@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using TMPro;
 using UnityEditor;
@@ -85,7 +85,7 @@ public static class RiftbornHUDSetupEditor
             Surface(info);
             Label(info, "TimerText", "00:00", 28, Text,
                 TextAlignmentOptions.Right, new Vector2(0, -10), new Vector2(200, 36));
-            Label(info, "KillCountText", $"Fantasmas: 0/{MatchStats.GhostTarget}\nFaltam {MatchStats.GhostTarget} para o boss", 18, Muted,
+            Label(info, "KillCountText", "Fantasmas: 0\nExplore o quarto", 18, Muted,
                 TextAlignmentOptions.Right, new Vector2(0, -54), new Vector2(240, 50));
 
             PlayerProgressionUI[] presenters = hud.GetComponentsInChildren<PlayerProgressionUI>(true);
@@ -242,3 +242,4 @@ public static class RiftbornHUDSetupEditor
         return slider;
     }
 }
+

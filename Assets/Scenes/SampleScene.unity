@@ -144,7 +144,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 202700700}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c7c772356a0e2f84bbba2c17efda19e9, type: 3}
   m_Name: 
@@ -154,7 +154,6 @@ MonoBehaviour:
   matchStats: {fileID: 202700702}
   minimumSpawnDistance: 5
   maximumSpawnDistance: 8
-  spawnInterval: 1
 --- !u!114 &202700702
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -851,7 +850,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 57be6a0777359ee4dba186b0ffad2c9d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
-  movementSpeed: 5
+  movementSpeed: 3
 --- !u!114 &648273954
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -892,7 +891,7 @@ MonoBehaviour:
   - {fileID: 21310013, guid: b60be089ad062dd4ab89fe015ada5bd6, type: 3}
   - {fileID: 21310014, guid: b60be089ad062dd4ab89fe015ada5bd6, type: 3}
   - {fileID: 21310015, guid: b60be089ad062dd4ab89fe015ada5bd6, type: 3}
-  shotDuration: 0.18
+  shotDuration: 0.24
   shootDown:
   - {fileID: 21320000, guid: b60be089ad062dd4ab89fe015ada5bd6, type: 3}
   - {fileID: 21320001, guid: b60be089ad062dd4ab89fe015ada5bd6, type: 3}
@@ -906,9 +905,9 @@ MonoBehaviour:
   - {fileID: 21320007, guid: b60be089ad062dd4ab89fe015ada5bd6, type: 3}
   - {fileID: 21320008, guid: b60be089ad062dd4ab89fe015ada5bd6, type: 3}
   shootRight:
+  - {fileID: 21320006, guid: b60be089ad062dd4ab89fe015ada5bd6, type: 3}
   - {fileID: 21320009, guid: b60be089ad062dd4ab89fe015ada5bd6, type: 3}
-  - {fileID: 21320010, guid: b60be089ad062dd4ab89fe015ada5bd6, type: 3}
-  - {fileID: 21320011, guid: b60be089ad062dd4ab89fe015ada5bd6, type: 3}
+  - {fileID: 21310012, guid: b60be089ad062dd4ab89fe015ada5bd6, type: 3}
 --- !u!50 &648273948
 Rigidbody2D:
   serializedVersion: 5
@@ -1069,8 +1068,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: db1e633bbd89474458e3fb1f41863bac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerExperience
-  baseExperience: 100
-  experienceIncreasePerLevel: 0
+  baseExperience: 20
+  maximumPowerBonus: 30
 --- !u!114 &648273953
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1793,7 +1792,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "Fantasmas: 0/50\nFaltam 50 para o boss"
+  m_text: "Fantasmas: 0\nExplore o quarto"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -1921,7 +1920,6 @@ MonoBehaviour:
   matchStats: {fileID: 202700702}
   minimumSpawnDistance: 5
   maximumSpawnDistance: 8
-  spawnInterval: 1
 --- !u!4 &1751487204
 Transform:
   m_ObjectHideFlags: 0

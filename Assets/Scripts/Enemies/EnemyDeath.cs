@@ -24,8 +24,9 @@ public class EnemyDeath : MonoBehaviour
 
     private void HandleDeath()
     {
-        // Phase enemies award XP directly through MatchStats, once per kill.
-        if (GetComponent<EnemyKillReporter>() != null)
+        // The boss keeps its completion reward; normal ghosts drop collectible XP.
+        EnemyKillReporter reporter = GetComponent<EnemyKillReporter>();
+        if (reporter != null && reporter.IsBoss)
         {
             gameObject.SetActive(false);
             Destroy(gameObject);

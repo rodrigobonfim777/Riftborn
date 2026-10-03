@@ -1,6 +1,6 @@
 using UnityEngine;
 
-// World-space cursor guide using the same aim direction as the weapon.
+// World-space reticle at the weapon's cursor aim position.
 [DisallowMultipleComponent]
 [DefaultExecutionOrder(200)]
 [RequireComponent(typeof(Weapon))]
@@ -8,9 +8,6 @@ public class WeaponAimIndicator : MonoBehaviour
 {
     private Weapon weapon;
     private PlayerController player;
-    private LineRenderer lane;
-    private LineRenderer leftEdge;
-    private LineRenderer rightEdge;
     private LineRenderer reticle;
     private readonly Vector3[] circle = new Vector3[33];
 
@@ -20,9 +17,6 @@ public class WeaponAimIndicator : MonoBehaviour
         player = GetComponentInParent<PlayerController>();
         SpriteRenderer owner = GetComponentInParent<SpriteRenderer>();
         if (owner == null) { enabled = false; return; }
-        lane = CreateLine("AimLane", owner, 0.3f, -2);
-        leftEdge = CreateLine("AimLeftEdge", owner, 0.025f, -1);
-        rightEdge = CreateLine("AimRightEdge", owner, 0.025f, -1);
         reticle = CreateLine("AimReticle", owner, 0.035f, 2);
         reticle.positionCount = circle.Length;
     }
@@ -53,18 +47,8 @@ public class WeaponAimIndicator : MonoBehaviour
         SetVisible(visible);
         if (!visible) return;
 
-        Vector3 origin = weapon.AimOrigin;
         Vector3 end = weapon.AimPosition;
-        Vector2 direction = weapon.AimDirection;
-
-        Vector3 perpendicular = new Vector3(-direction.y, direction.x, 0f) * 0.15f;
-        SetSegment(lane, origin, end);
-        SetSegment(leftEdge, origin + perpendicular, end + perpendicular);
-        SetSegment(rightEdge, origin - perpendicular, end - perpendicular);
         Color color = new Color(0.55f, 0.95f, 1f);
-        Tint(lane, color, 0.18f);
-        Tint(leftEdge, color, 0.7f);
-        Tint(rightEdge, color, 0.7f);
 
         const float radius = 0.2f;
         for (int i = 0; i < circle.Length; i++)
@@ -76,12 +60,6 @@ public class WeaponAimIndicator : MonoBehaviour
         Tint(reticle, color, 0.9f);
     }
 
-    private static void SetSegment(LineRenderer line, Vector3 start, Vector3 end)
-    {
-        line.SetPosition(0, start);
-        line.SetPosition(1, end);
-    }
-
     private static void Tint(LineRenderer line, Color color, float alpha)
     {
         color.a = alpha;
@@ -90,8 +68,8 @@ public class WeaponAimIndicator : MonoBehaviour
 
     private void SetVisible(bool visible)
     {
-        if (lane == null) return;
-        lane.enabled = leftEdge.enabled = rightEdge.enabled = reticle.enabled = visible;
+        if (reticle == null) return;
+        reticle.enabled = visible;
     }
 
     private void OnDisable() => SetVisible(false);

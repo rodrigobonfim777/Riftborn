@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 [ExecuteAlways]
 [DisallowMultipleComponent]
@@ -7,6 +7,7 @@ public class HouseFloor : MonoBehaviour
 {
     [SerializeField] private Vector2 mapSize = new Vector2(100f, 100f);
     private SpriteRenderer floorRenderer;
+    private bool sizeDirty;
     public static HouseFloor Active { get; private set; }
     public Rect Bounds => new Rect((Vector2)transform.position - mapSize * 0.5f, mapSize);
 
@@ -26,6 +27,14 @@ public class HouseFloor : MonoBehaviour
     private void OnValidate()
     {
         mapSize = new Vector2(Mathf.Max(20f, mapSize.x), Mathf.Max(20f, mapSize.y));
+        sizeDirty = true;
+    }
+
+    private void Update()
+    {
+        // Sprite changes are deferred out of OnValidate to avoid Unity import callbacks.
+        if (!sizeDirty) return;
+        sizeDirty = false;
         floorRenderer = GetComponent<SpriteRenderer>();
         ApplySize();
     }
@@ -77,3 +86,4 @@ public class HouseFloor : MonoBehaviour
         }
     }
 }
+
